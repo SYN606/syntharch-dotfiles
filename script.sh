@@ -1,7 +1,7 @@
 
 
 # install required packages 
-sudo pacman -S --needed fish eza bat fastfetch expac yay paru ugrep btop hwinfo reflector meld tar wget p7zip xsel starship ttf-firacode-nerd ttf-jetbrains-mono
+sudo pacman -S --needed --noconfirm fish eza bat fastfetch expac yay paru ugrep btop hwinfo reflector meld tar wget p7zip xsel starship ttf-firacode-nerd ttf-jetbrains-mono ttf-cascadia-code 
 
 git clone https://github.com/NvChad/starter ~/.config/nvim
 
