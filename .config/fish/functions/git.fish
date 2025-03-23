@@ -1,5 +1,3 @@
-# 🚀 Git Shortcuts for Fish Shell
-
 # Add all changes and commit with a message
 function gcommit --description "Add all changes and commit with a message"
     if test (count $argv) -eq 0
@@ -28,13 +26,13 @@ end
 
 # Remove local branches that no longer exist on remote
 function gcleanup --description "Remove merged local branches that no longer exist on remote"
-    git fetch -p
-    git branch --merged | grep -v '\*' | xargs -n 1 git branch -d
+    git fetch --all --prune
+    git branch -vv | grep ': gone' | awk '{print $1}' | xargs git branch -d
 end
 
 # Switch to the last used branch
 function gprev --description "Switch to the previous branch"
-    git checkout -
+    git switch -
 end
 
 # Show commit history for a specific file
@@ -127,6 +125,10 @@ end
 
 # Apply the latest stash
 function gstash-pop --description "Apply the most recent stash"
+    if test -z (git stash list)
+        echo "❌ No stashes found!"
+        return 1
+    end
     git stash pop
 end
 
@@ -135,8 +137,36 @@ function gstash-list --description "List all stash entries"
     git stash list
 end
 
-# 🚀 Reload Fish Configuration
-function freload --description "Reload Fish shell configuration"
-    source ~/.config/fish/config.fish
-    echo "✅ Fish config reloaded!"
+function gclone --description "Clone a Git repository with optional directory name"
+    if test (count $argv) -lt 1
+        echo "❌ Error: Repository URL required!"
+        echo "Usage: gclone <repo-url> [directory-name]"
+        return 1
+    end
+
+    set repo_url $argv[1]
+    set dir_name (count $argv) -gt 1; and echo $argv[2] || echo ""
+
+    echo "📥 Cloning repository: $repo_url"
+
+    if test -n "$dir_name"
+        git clone "$repo_url" "$dir_name"
+    else
+        git clone "$repo_url"
+    end
+
+    if test $status -eq 0
+        echo "✅ Clone successful!"
+    else
+        echo "❌ Clone failed!"
+    end
+end
+
+
+# Show all available Git functions and their descriptions
+function ghelp --description "List all Git shortcut commands and their descriptions"
+    echo "🚀 Available Git Commands:"
+    functions --all | grep '^g' | while read -l cmd
+        echo "- $cmd: "(functions --description $cmd)
+    end
 end
