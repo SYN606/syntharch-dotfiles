@@ -1,0 +1,16 @@
+MenuBar=Disabled
+
+[Desktop Entry]
+DefaultProfile=Nova Fish.profile
+
+[General]
+ConfigVersion=1
+
+[MainWindow]
+ToolBarsMovable=Enabled
+
+[Notification Messages]
+CloseAllTabs=true
+
+[UiSettings]
+ColorScheme=
