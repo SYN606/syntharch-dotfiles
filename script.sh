@@ -63,5 +63,6 @@ handle_local_directory() {
 handle_local_directory
 
 rsync -av .config/ $HOME/.config/
+rsync -av .vscode/ $HOME/
 
 echo "All done. Run neo vim to load config properly."
