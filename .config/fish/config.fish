@@ -30,5 +30,3 @@ end
 # Starship Prompt Initialization
 starship init fish | source
 
-# Start Fastfetch
-fastfetch

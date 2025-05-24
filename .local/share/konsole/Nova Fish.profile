@@ -1,8 +1,10 @@
 [Appearance]
-ColorScheme=Sweet-Ambar-Blue
+ColorScheme=Sweet-Mars
 Font=FiraCode Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+TabColor=255,255,128
 
 [Cursor Options]
+CursorShape=1
 CustomCursorColor=255,0,0
 UseCustomCursorColor=true
 

@@ -1,4 +1,4 @@
-# Add all changes and commit with a message
+# Git commit with message
 function gcommit --description "Add all changes and commit with a message"
     if test (count $argv) -eq 0
         echo "❌ Error: Commit message required!"
@@ -6,37 +6,31 @@ function gcommit --description "Add all changes and commit with a message"
         return 1
     end
     git add .
-    git commit -m "$argv"
+    git commit -m "$argv[*]"
 end
 
-# Short Git status
-function gst --description "Show short Git status (staged, unstaged, and untracked files)"
+function gst --description "Show short Git status"
     git status -sb
 end
 
-# Pretty Git log graph
-function glg --description "Display a compact Git log with graph and decorations"
+function glg --description "Display Git log with graph"
     git log --oneline --graph --all --decorate
 end
 
-# Undo last commit but keep changes staged
-function guncommit --description "Undo the last commit but keep changes in staging"
+function guncommit --description "Undo last commit (keep staged)"
     git reset --soft HEAD~1
 end
 
-# Remove local branches that no longer exist on remote
-function gcleanup --description "Remove merged local branches that no longer exist on remote"
+function gcleanup --description "Remove local branches gone from remote"
     git fetch --all --prune
-    git branch -vv | grep ': gone' | awk '{print $1}' | xargs git branch -d
+    git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -d
 end
 
-# Switch to the last used branch
-function gprev --description "Switch to the previous branch"
+function gprev --description "Switch to previous branch"
     git switch -
 end
 
-# Show commit history for a specific file
-function gfilelog --description "Show commit history for a specific file"
+function gfilelog --description "Show commit history for a file"
     if test (count $argv) -eq 0
         echo "❌ Error: File path required!"
         echo "Usage: gfilelog <file-path>"
@@ -45,8 +39,7 @@ function gfilelog --description "Show commit history for a specific file"
     git log --follow --pretty=format:'%h %ad | %s%d [%an]' --date=short -- $argv
 end
 
-# View file changes in a specific commit
-function gshowdiff --description "Show file changes in a specific commit"
+function gshowdiff --description "Show changed files in a commit"
     if test (count $argv) -eq 0
         echo "❌ Error: Commit hash required!"
         echo "Usage: gshowdiff <commit-hash>"
@@ -55,25 +48,24 @@ function gshowdiff --description "Show file changes in a specific commit"
     git diff-tree --no-commit-id --name-status -r $argv
 end
 
-# 🚀 Additional Git Shortcuts
-
-# Push current branch to origin
-function gpush --description "Push the current branch to origin"
+function gpush --description "Push current branch"
     git push origin (git branch --show-current)
 end
 
-# Force push (use with caution)
-function gpushf --description "Force push the current branch (DANGEROUS: Overwrites remote history)"
-    git push --force origin (git branch --show-current)
+function gpushf --description "Force push current branch (DANGEROUS)"
+    read -l -p "⚠️  Are you sure you want to force push? (yes/no): " confirm
+    if test "$confirm" = "yes"
+        git push --force origin (git branch --show-current)
+    else
+        echo "❌ Force push aborted."
+    end
 end
 
-# Pull latest changes with rebase
-function gpull --description "Pull the latest changes with rebase"
+function gpull --description "Pull latest changes with rebase"
     git pull --rebase origin (git branch --show-current)
 end
 
-# Merge another branch into the current branch
-function gmerge --description "Merge another branch into the current branch"
+function gmerge --description "Merge specified branch"
     if test (count $argv) -eq 0
         echo "❌ Error: Branch name required!"
         echo "Usage: gmerge <branch-name>"
@@ -82,49 +74,41 @@ function gmerge --description "Merge another branch into the current branch"
     git merge $argv
 end
 
-# Abort a merge if conflicts arise
-function gmerge-abort --description "Abort an ongoing merge process"
+function gmerge-abort --description "Abort ongoing merge"
     git merge --abort
 end
 
-# List unresolved merge conflicts
-function gconflicts --description "List files with unresolved merge conflicts"
+function gconflicts --description "List unresolved merge conflicts"
     git diff --name-only --diff-filter=U
 end
 
-# Add & resolve all conflicted files
-function gresolve --description "Automatically stage and commit all resolved conflicts"
+function gresolve --description "Add and commit resolved conflicts"
     git diff --name-only --diff-filter=U | xargs git add
     git commit -m "Resolved merge conflicts"
 end
 
-# Fetch all branches & remove deleted ones
-function gfetch --description "Fetch all remote branches and prune deleted ones"
+function gfetch --description "Fetch all remote branches"
     git fetch --all --prune
 end
 
-# Check the current branch name
-function gbranch --description "Display the current Git branch name"
+function gbranch --description "Show current Git branch"
     git branch --show-current
 end
 
-# List all branches sorted by latest commit
-function gbranches --description "List all Git branches sorted by latest commit"
+function gbranches --description "List all branches sorted by latest commit"
     git branch --sort=-committerdate
 end
 
-# Stash changes with a message
-function gstash --description "Stash current changes with a message"
+function gstash --description "Stash changes with a message"
     if test (count $argv) -eq 0
         echo "❌ Error: Stash message required!"
-        echo "Usage: gstash 'Your stash message'"
+        echo "Usage: gstash 'Your message'"
         return 1
     end
-    git stash push -m "$argv"
+    git stash push -m "$argv[*]"
 end
 
-# Apply the latest stash
-function gstash-pop --description "Apply the most recent stash"
+function gstash-pop --description "Apply latest stash"
     if test -z (git stash list)
         echo "❌ No stashes found!"
         return 1
@@ -132,23 +116,20 @@ function gstash-pop --description "Apply the most recent stash"
     git stash pop
 end
 
-# Show all stash entries
 function gstash-list --description "List all stash entries"
     git stash list
 end
 
-function gclone --description "Clone a Git repository with optional directory name"
+function gclone --description "Clone a repo (with optional dir name)"
     if test (count $argv) -lt 1
         echo "❌ Error: Repository URL required!"
         echo "Usage: gclone <repo-url> [directory-name]"
         return 1
     end
-
     set repo_url $argv[1]
-    set dir_name (count $argv) -gt 1; and echo $argv[2] || echo ""
+    set dir_name $argv[2]
 
-    echo "📥 Cloning repository: $repo_url"
-
+    echo "📥 Cloning: $repo_url"
     if test -n "$dir_name"
         git clone "$repo_url" "$dir_name"
     else
@@ -162,11 +143,32 @@ function gclone --description "Clone a Git repository with optional directory na
     end
 end
 
+# Generate .gitignore file
+function gignore --description "Generate .gitignore using gitignore.io"
+    if test (count $argv) -eq 0
+        echo "❌ Error: Language or platform required!"
+        echo "Usage: gignore <language1,language2,...>"
+        return 1
+    end
+    set url "https://www.toptal.com/developers/gitignore/api/"(string join ',' $argv)
+    curl -s "$url" > .gitignore
+    if test $status -eq 0
+        echo "✅ .gitignore generated for: $argv[*]"
+    else
+        echo "❌ Failed to generate .gitignore"
+    end
+end
 
-# Show all available Git functions and their descriptions
-function ghelp --description "List all Git shortcut commands and their descriptions"
+# Fuzzy switch to branch using fzf
+function gcheckout --description "Switch to a Git branch using fzf"
+    git fetch --all --prune
+    git branch -a | sed 's/^[* ] //' | fzf --preview 'git log --oneline --color=always {}' | xargs git checkout
+end
+
+# Help command
+function ghelp --description "List all Git functions and descriptions"
     echo "🚀 Available Git Commands:"
-    functions --all | grep '^g' | while read -l cmd
-        echo "- $cmd: "(functions --description $cmd)
+    for cmd in (functions --all | grep '^g')
+        printf "  %-16s - %s\n" $cmd (functions --description $cmd)
     end
 end
