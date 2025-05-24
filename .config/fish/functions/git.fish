@@ -6,7 +6,7 @@ function gcommit --description "Add all changes and commit with a message"
         return 1
     end
     git add .
-    git commit -m "$argv[*]"
+    git commit -m "$argv"
 end
 
 function gst --description "Show short Git status"
