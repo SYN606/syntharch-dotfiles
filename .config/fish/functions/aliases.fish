@@ -20,7 +20,7 @@ alias l. 'eza -ald --color=always --group-directories-first --icons .*'
 # ─────────────────────────────
 # 🐱 FILE VIEWING
 # ─────────────────────────────
-alias cat 'bat --style=header --style=snip --style=changes'
+alias cat 'bat --style=header,snip,changes'
 
 # ─────────────────────────────
 # 🔍 SYSTEM UTILITIES
@@ -32,12 +32,13 @@ alias jctl 'journalctl -p 3 -xb'
 alias grubup 'sudo update-grub'
 alias fixpacman 'sudo rm /var/lib/pacman/db.lck'
 alias pacdiff 'sudo -H DIFFPROG=meld pacdiff'
-alias rip 'expac --timefmt="%Y-%m-%d %T" "%l\t%n %v" | sort | tail -200 | nl'
+alias rip 'expac --timefmt="%Y-%m-%d %T" "%l\t%n %v" | sort -k1,1 | tail -200 | nl'
 
 # ─────────────────────────────
 # 📦 PACKAGE MANAGEMENT
 # ─────────────────────────────
-alias pls 'sudo'
+alias pls sudo
+alias please sudo
 alias update 'pls pacman -Syu'
 alias getpkg 'pls pacman -S --needed'
 alias rmpkg 'pls pacman -Rns'
@@ -49,7 +50,7 @@ alias aurget 'yay -S'
 # ─────────────────────────────
 function cls-cache --description "Clear pacman cache"
     read -l -p "Clear all cached packages? (y/N) " confirm
-    if test "$confirm" = "y"
+    if test "$confirm" = y
         yes | pls pacman -Scc
     else
         echo "❌ Cancelled."
@@ -69,7 +70,7 @@ function orphans --description "Remove orphaned packages"
 end
 
 function mirrors --description "Update mirror list to fastest servers"
-    pls reflector --verbose --sort rate -l 20 --save /etc/pacman.d/mirrorlist
+    pls reflector --verbose --country India --sort rate -l 20 --save /etc/pacman.d/mirrorlist
 end
 
 # ─────────────────────────────
@@ -84,23 +85,45 @@ alias btop 'btop --force-utf'
 # 🐍 PYTHON DEV TOOLS
 # ─────────────────────────────
 alias venv 'python -m venv env'
-alias acvt 'source env/bin/activate.fish'
+
+function acvt --description "Activate virtualenv (Fish)"
+    if test -f env/bin/activate.fish
+        source env/bin/activate.fish
+    else
+        echo "❌ env/bin/activate.fish not found!"
+    end
+end
 
 # ─────────────────────────────
 # 🧰 MISC UTILITIES
 # ─────────────────────────────
 alias wget 'wget -c'
-alias tarnow 'tar -acf '
-alias untar 'tar -zxvf '
+
+function tarnow --description "Create tar.gz archive from files"
+    if test (count $argv) -lt 2
+        echo "Usage: tarnow <archive-name.tar.gz> <file(s)>"
+        return 1
+    end
+    tar -acf $argv
+end
+
+function untar --description "Extract .tar.gz file"
+    if test (count $argv) -eq 0
+        echo "Usage: untar <file.tar.gz>"
+        return 1
+    end
+    tar -xvzf $argv
+end
 
 # ─────────────────────────────
 # 🧼 HISTORY MANAGEMENT
 # ─────────────────────────────
 alias cls-hist 'builtin history clear'
+alias cls clear
 
 # ─────────────────────────────
 # 🎨 SHELL GREETING (optional)
 # ─────────────────────────────
-alias fastfetch 'fastfetch --colors-block-range-start 9 --colors-block-width 3'
-
-fastfetch
+function fish_greeting
+    fastfetch --colors-block-range-start 9 --colors-block-width 3
+end

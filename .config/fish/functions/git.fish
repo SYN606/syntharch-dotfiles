@@ -6,7 +6,7 @@ function gcommit --description "Add all changes and commit with a message"
         return 1
     end
     git add .
-    git commit -m "$argv"
+    git commit -m "$argv[*]"
 end
 
 function gst --description "Show short Git status"
@@ -23,7 +23,7 @@ end
 
 function gcleanup --description "Remove local branches gone from remote"
     git fetch --all --prune
-    git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -d
+    git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -r git branch -d
 end
 
 function gprev --description "Switch to previous branch"
@@ -36,7 +36,7 @@ function gfilelog --description "Show commit history for a file"
         echo "Usage: gfilelog <file-path>"
         return 1
     end
-    git log --follow --pretty=format:'%h %ad | %s%d [%an]' --date=short -- $argv
+    git log --follow --pretty=format:'%h %ad | %s%d [%an]' --date=short -- "$argv[*]"
 end
 
 function gshowdiff --description "Show changed files in a commit"
@@ -45,7 +45,7 @@ function gshowdiff --description "Show changed files in a commit"
         echo "Usage: gshowdiff <commit-hash>"
         return 1
     end
-    git diff-tree --no-commit-id --name-status -r $argv
+    git diff-tree --no-commit-id --name-status -r "$argv[1]"
 end
 
 function gpush --description "Push current branch"
@@ -54,7 +54,7 @@ end
 
 function gpushf --description "Force push current branch (DANGEROUS)"
     read -l -p "⚠️  Are you sure you want to force push? (yes/no): " confirm
-    if test "$confirm" = "yes"
+    if test (string lower "$confirm") = yes
         git push --force origin (git branch --show-current)
     else
         echo "❌ Force push aborted."
@@ -71,7 +71,7 @@ function gmerge --description "Merge specified branch"
         echo "Usage: gmerge <branch-name>"
         return 1
     end
-    git merge $argv
+    git merge "$argv[1]"
 end
 
 function gmerge-abort --description "Abort ongoing merge"
@@ -83,7 +83,7 @@ function gconflicts --description "List unresolved merge conflicts"
 end
 
 function gresolve --description "Add and commit resolved conflicts"
-    git diff --name-only --diff-filter=U | xargs git add
+    git diff --name-only --diff-filter=U | xargs -r git add
     git commit -m "Resolved merge conflicts"
 end
 
@@ -109,7 +109,7 @@ function gstash --description "Stash changes with a message"
 end
 
 function gstash-pop --description "Apply latest stash"
-    if test -z (git stash list)
+    if not git stash list | grep -q .
         echo "❌ No stashes found!"
         return 1
     end
@@ -126,8 +126,8 @@ function gclone --description "Clone a repo (with optional dir name)"
         echo "Usage: gclone <repo-url> [directory-name]"
         return 1
     end
-    set repo_url $argv[1]
-    set dir_name $argv[2]
+    set repo_url "$argv[1]"
+    set dir_name "$argv[2]"
 
     echo "📥 Cloning: $repo_url"
     if test -n "$dir_name"
@@ -143,7 +143,6 @@ function gclone --description "Clone a repo (with optional dir name)"
     end
 end
 
-# Generate .gitignore file
 function gignore --description "Generate .gitignore using gitignore.io"
     if test (count $argv) -eq 0
         echo "❌ Error: Language or platform required!"
@@ -151,7 +150,7 @@ function gignore --description "Generate .gitignore using gitignore.io"
         return 1
     end
     set url "https://www.toptal.com/developers/gitignore/api/"(string join ',' $argv)
-    curl -s "$url" > .gitignore
+    curl -s "$url" >.gitignore
     if test $status -eq 0
         echo "✅ .gitignore generated for: $argv[*]"
     else
@@ -159,13 +158,16 @@ function gignore --description "Generate .gitignore using gitignore.io"
     end
 end
 
-# Fuzzy switch to branch using fzf
 function gcheckout --description "Switch to a Git branch using fzf"
     git fetch --all --prune
-    git branch -a | sed 's/^[* ] //' | fzf --preview 'git log --oneline --color=always {}' | xargs git checkout
+    set branch (git branch -a | sed 's/^[* ] //' | fzf --preview 'git log --oneline --color=always {}')
+    if test -n "$branch"
+        git checkout $branch
+    else
+        echo "❌ No branch selected."
+    end
 end
 
-# Help command
 function ghelp --description "List all Git functions and descriptions"
     echo "🚀 Available Git Commands:"
     for cmd in (functions --all | grep '^g')
