@@ -39,20 +39,25 @@ function update_dotfiles --description "Update local dotfiles from SYN606/syntha
 end
 
 # --------- starship command ------------
-
-function starship-use --description "Switch Starship prompt theme using official presets"
+function starship-use --description "Switch Starship prompt theme using custom .toml presets"
     if not type -q starship
         echo "❌ Error: Starship is not installed!"
         return 1
     end
 
+    set preset_dir "$HOME/.config/starship"
     set output_file "$HOME/.config/starship.toml"
+    set preset_files (ls $preset_dir/*.toml 2>/dev/null)
 
-    set presets nerd-font-symbols plain-username andromeda tokyo-night modern minimal
+    if test (count $preset_files) -eq 0
+        echo "❌ No Starship preset files found in $preset_dir"
+        return 1
+    end
 
     echo "🎨 Available Starship Presets:"
-    for i in (seq (count $presets))
-        printf "  [%d] %s\n" $i $presets[$i]
+    for i in (seq (count $preset_files))
+        set name (basename $preset_files[$i] .toml)
+        printf "  [%d] %s\n" $i $name
     end
 
     echo -n "👉 Enter the number of the preset to use: "
@@ -63,20 +68,21 @@ function starship-use --description "Switch Starship prompt theme using official
         return 1
     end
 
-    if test $choice -lt 1 -o $choice -gt (count $presets)
+    if test $choice -lt 1 -o $choice -gt (count $preset_files)
         echo "❌ Choice out of range."
         return 1
     end
 
-    set selected $presets[$choice]
+    set selected_file $preset_files[$choice]
+    set selected_name (basename $selected_file .toml)
 
-    echo "✨ Applying Starship preset: '$selected'"
-    starship preset $selected -o $output_file
+    echo "📂 Switching to Starship preset: '$selected_name'"
+    cp $selected_file $output_file
 
     if test $status -ne 0
-        echo "❌ Failed to apply preset: $selected"
+        echo "❌ Failed to apply preset: $selected_name"
         return 1
     end
 
-    echo "✅ Starship config updated to '$selected'"
+    echo "✅ Starship config set to '$selected_name'"
 end

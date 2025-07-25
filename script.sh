@@ -128,7 +128,6 @@ handle_local_directory() {
 
 sync_configs() {
     [[ -d .config ]] && rsync -av .config/ "$HOME/.config/"
-    [[ -d .vscode ]] && rsync -av .vscode/ "$HOME/"
     echo -e "${GREEN}✔️ Configs synced.${RESET}"
 }
 
