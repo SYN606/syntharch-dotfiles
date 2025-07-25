@@ -10,7 +10,9 @@
 
 
 ⚙️ A modular dotfiles & setup script for Arch Linux — crafted for both penetration testing and personal use.
-🐟 Note: This setup uses Fish Shell as the base shell. Please ensure Fish is installed and set as your default shell before use.
+
+---
+🐟 Note: This setup is for fish shell config so make sure you're confortable using fish shell.
 
 ---
 
