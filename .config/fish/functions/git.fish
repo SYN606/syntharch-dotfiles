@@ -2,11 +2,11 @@
 function gcommit --description "Add all changes and commit with a message"
     if test (count $argv) -eq 0
         echo "❌ Error: Commit message required!"
-        echo "Usage: gcommit 'Your commit message'"
+        echo "Usage: gcommit <your message>"
         return 1
     end
     git add .
-    git commit -m "$argv[*]"
+    git commit -m "$argv"
 end
 
 function gst --description "Show short Git status"
@@ -14,7 +14,7 @@ function gst --description "Show short Git status"
 end
 
 function glg --description "Display Git log with graph"
-    git log --oneline --graph --all --decorate
+    git log --oneline --graph --all --decorate --color=always
 end
 
 function guncommit --description "Undo last commit (keep staged)"
@@ -36,7 +36,7 @@ function gfilelog --description "Show commit history for a file"
         echo "Usage: gfilelog <file-path>"
         return 1
     end
-    git log --follow --pretty=format:'%h %ad | %s%d [%an]' --date=short -- "$argv[*]"
+    git log --follow --pretty=format:'%h %ad | %s%d [%an]' --date=short -- "$argv"
 end
 
 function gshowdiff --description "Show changed files in a commit"
@@ -83,8 +83,12 @@ function gconflicts --description "List unresolved merge conflicts"
 end
 
 function gresolve --description "Add and commit resolved conflicts"
+    set msg (string join " " $argv)
+    if test -z "$msg"
+        set msg "Resolved merge conflicts"
+    end
     git diff --name-only --diff-filter=U | xargs -r git add
-    git commit -m "Resolved merge conflicts"
+    git commit -m "$msg"
 end
 
 function gfetch --description "Fetch all remote branches"
@@ -102,10 +106,10 @@ end
 function gstash --description "Stash changes with a message"
     if test (count $argv) -eq 0
         echo "❌ Error: Stash message required!"
-        echo "Usage: gstash 'Your message'"
+        echo "Usage: gstash <your message>"
         return 1
     end
-    git stash push -m "$argv[*]"
+    git stash push -m "$argv"
 end
 
 function gstash-pop --description "Apply latest stash"
@@ -150,9 +154,17 @@ function gignore --description "Generate .gitignore using gitignore.io"
         return 1
     end
     set url "https://www.toptal.com/developers/gitignore/api/"(string join ',' $argv)
-    curl -s "$url" >.gitignore
+    if type -q curl
+        curl -s "$url" >.gitignore
+    else if type -q wget
+        wget -qO .gitignore "$url"
+    else
+        echo "❌ curl or wget is required!"
+        return 1
+    end
+
     if test $status -eq 0
-        echo "✅ .gitignore generated for: $argv[*]"
+        echo "✅ .gitignore generated for: $argv"
     else
         echo "❌ Failed to generate .gitignore"
     end
@@ -168,9 +180,47 @@ function gcheckout --description "Switch to a Git branch using fzf"
     end
 end
 
-function ghelp --description "List all Git functions and descriptions"
-    echo "🚀 Available Git Commands:"
-    for cmd in (functions --all | grep '^g')
-        printf "  %-16s - %s\n" $cmd (functions --description $cmd)
+function ghelp --description "Show help for all g* commands"
+    echo ""
+    set_color yellow
+    echo "🚀 Git Command Suite for Fish Shell"
+    set_color normal
+    echo "─────────────────────────────────────────────"
+
+    set script_path (status current-filename)
+
+    if test -z "$script_path"
+        set_color red
+        echo "⚠️  Cannot determine script path. Make sure you're sourcing this file."
+        set_color normal
+        return 1
     end
+
+    for line in (grep '^function g' $script_path)
+        # Extract function name
+        set cmd (string match -r '^function ([^ ]+)' -- $line)[2]
+
+        # Extract description
+        if string match -q '*--description "*"' -- $line
+            set parts (string split -- '--description ' $line)
+            set rawdesc (string split -- '"' $parts[2])
+            set desc $rawdesc[2]
+        else
+            set desc "(No description)"
+        end
+
+        # Print formatted and colorized output
+        set_color cyan
+        printf "🔸 "
+        set_color green
+        printf "%-15s" $cmd
+        set_color normal
+        printf " → "
+        set_color brwhite
+        echo "$desc"
+        set_color normal
+    end
+
+    echo "─────────────────────────────────────────────"
+    set_color normal
 end

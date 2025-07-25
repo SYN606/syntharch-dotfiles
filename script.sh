@@ -94,6 +94,16 @@ handle_gpu_config() {
     echo -e "${GREEN}✔️ GPU config removed from local dotfiles.${RESET}"
 }
 
+handle_git_config() {
+    read -p "$(echo -e "${BLUE}🐙 Enable Git config in Fish shell? (y/n): ${RESET}")" choice
+    [[ "$choice" =~ ^[yY] ]] && return
+    
+    echo -e "${YELLOW}🗑️ Removing Git config from dotfiles...${RESET}"
+    rm -f .config/fish/functions/git.fish
+    sed -i '/if test -f ~\/\.config\/fish\/functions\/git\.fish/,/end/d' .config/fish/config.fish
+    echo -e "${GREEN}✔️ Git config removed from local dotfiles.${RESET}"
+}
+
 handle_local_directory() {
     if [[ -d .local ]]; then
         read -p "$(echo -e "${BLUE}📁 Are you using Konsole (sync .local)? (y/n): ${RESET}")" choice
@@ -138,6 +148,7 @@ main() {
     install_packages
     install_nvim_config
     enable_chaotic_aur
+    handle_git_config
     handle_gpu_config
     handle_local_directory
     sync_configs
