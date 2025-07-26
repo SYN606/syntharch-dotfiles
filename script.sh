@@ -104,6 +104,29 @@ handle_git_config() {
     echo -e "${GREEN}✔️ Git config removed from local dotfiles.${RESET}"
 }
 
+install_pentest_tools() {
+    echo "────────────────────────────────────────────"
+    echo "  DARK ARCH :: Pentesting Tools Installer"
+    echo "────────────────────────────────────────────"
+    read -p "Install pentesting tools? (y/n): " answer
+    
+    case "${answer,,}" in
+        y|yes)
+            if [[ -f "./dark-arch-install.sh" ]]; then
+                echo "[*] Running dark-arch-install.sh..."
+                chmod +x ./dark-arch-install.sh
+                ./dark-arch-install.sh
+            else
+                echo "[!] dark-arch-install.sh not found!"
+                exit 1
+            fi
+        ;;
+        *)
+            echo "[*] Skipping pentesting tools installation."
+        ;;
+    esac
+}
+
 handle_local_directory() {
     if [[ -d .local ]]; then
         read -p "$(echo -e "${BLUE}📁 Are you using Konsole (sync .local)? (y/n): ${RESET}")" choice
@@ -152,6 +175,7 @@ main() {
     handle_local_directory
     sync_configs
     enable_starship_prompt
+    install_pentest_tools
     echo -e "\n${GREEN}🎉 All done! Launch Neovim with \`nvim\` and enjoy your setup.${RESET}"
 }
 
