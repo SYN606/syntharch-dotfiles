@@ -80,25 +80,36 @@ enable_chaotic_aur() {
     read -p "$(echo -e "${BLUE}🚀 Do you want to enable Chaotic AUR? (y/n): ${RESET}")" choice
     case "$choice" in
         y|Y|yes|YES)
-            echo -e "${BLUE}🔑 Importing Chaotic AUR keys...${RESET}"
+            echo -e "${BLUE}🔑 Importing Chaotic AUR GPG key...${RESET}"
             sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
             sudo pacman-key --lsign-key 3056513887B78AEB
-            echo -e "${BLUE}📦 Installing keyring and mirrorlist...${RESET}"
+
+            echo -e "${BLUE}📦 Installing chaotic-keyring and mirrorlist...${RESET}"
             sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
             sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-            echo -e "${BLUE}🔧 Updating pacman.conf...${RESET}"
-            echo -e "\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
-            echo -e "${GREEN}✅ Chaotic AUR enabled!${RESET}"
+
+            if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
+                echo -e "${BLUE}🔧 Adding Chaotic AUR to pacman.conf...${RESET}"
+                echo -e "\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf > /dev/null
+            else
+                echo -e "${YELLOW}⚠️  Chaotic AUR already present in pacman.conf.${RESET}"
+            fi
+
+            echo -e "${BLUE}🔄 Syncing and updating package lists...${RESET}"
+            sudo pacman -Syu
+
+            echo -e "${GREEN}✅ Chaotic AUR is now enabled and ready to use!${RESET}"
         ;;
         n|N|no|NO)
             echo -e "${YELLOW}❌ Skipping Chaotic AUR setup.${RESET}"
         ;;
         *)
-            echo -e "${RED}⚠️ Invalid input.${RESET}"
+            echo -e "${RED}⚠️ Invalid input. Please enter y or n.${RESET}"
             enable_chaotic_aur
         ;;
     esac
 }
+
 
 handle_gpu_config() {
     read -p "$(echo -e "${BLUE}🎮 Enable GPU config in Fish shell? (y/n): ${RESET}")" choice
