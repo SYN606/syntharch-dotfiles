@@ -1,4 +1,5 @@
 # SYNTHARCH - dotfiles
+
 ## synthesized arch dotfiles
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/SYN606/dotfiles?style=for-the-badge)
@@ -7,7 +8,6 @@
 ![ShellCheck](https://img.shields.io/badge/lint-shellcheck-brightgreen?style=for-the-badge&logo=gnu-bash)
 ![Neovim Config](https://img.shields.io/badge/Neovim-NvChad-blueviolet?style=for-the-badge&logo=neovim&logoColor=green)
 ![Pentest Ready](https://img.shields.io/badge/Usecase-Pentest%20%26%20Personal-orange?style=for-the-badge&logo=gnupg)
-
 
 ⚙️ A modular dotfiles & setup script for Arch Linux — crafted for both penetration testing and personal use.
 
@@ -25,30 +25,29 @@ This repository contains configuration files (dotfiles) and a setup script tailo
 - 💻 Optional GPU setup
 - 🎯 Clean scripting with modular prompts
 
-
 Contents
 --------
 
-*   **.config/**: Contains configuration files for various applications.
-*   **.local/share/konsole/**: Holds profiles and settings for the Konsole terminal emulator.
-*   **script.sh**: A shell script to automate the setup or configuration process.
+- **.config/**: Contains configuration files for various applications.
+- **.local/share/konsole/**: Holds profiles and settings for the Konsole terminal emulator.
+- **script.sh**: A shell script to automate the setup or configuration process.
 
 Usage
 -----
 
-1.  **Clone the Repository**:
+1. **Clone the Repository**:
 
-    git clone https://github.com/SYN606/dotfiles.git
+    git clone <https://github.com/SYN606/dotfiles.git>
 
-3.  **Navigate to the Directory**:
+3. **Navigate to the Directory**:
 
     cd dotfiles
 
-5.  **Make the Script Executable**:
+5. **Make the Script Executable**:
 
     chmod +x script.sh
 
-7.  **Run the Script**:
+7. **Run the Script**:
 
     bash script.sh
 
