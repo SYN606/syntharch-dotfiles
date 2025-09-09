@@ -121,5 +121,5 @@ alias cls clear
 # 🎨 SHELL GREETING (optional)
 # ─────────────────────────────
 function fish_greeting
-    fastfetch --colors-block-range-start 9 --colors-block-width 3
+    fastfetch
 end
