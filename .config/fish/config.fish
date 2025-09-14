@@ -41,6 +41,11 @@ if test -f ~/.config/fish/functions/gpu.fish
     source ~/.config/fish/functions/gpu.fish
 end
 
+# Load python dev config if available
+if test -f ~/.config/fish/functions/python.fish
+    source ~/.config/fish/functions/python.fish
+end
+
 # Starship prompt initialization
 if type -q starship
     starship init fish | source

@@ -21,14 +21,31 @@ alias cat 'bat --style=header,snip,changes'
 # ─────────────────────────────
 # 🔍 SYSTEM UTILITIES
 # ─────────────────────────────
-alias grep 'ugrep --color=auto'
-alias ip 'ip -color'
+alias grep 'ugrep --color=always'
 alias hw 'hwinfo --short'
-alias jctl 'journalctl -p 3 -xb'
-alias grubup 'sudo update-grub'
-alias fixpacman 'sudo rm /var/lib/pacman/db.lck'
-alias pacdiff 'sudo -H DIFFPROG=meld pacdiff'
-alias rip 'expac --timefmt="%Y-%m-%d %T" "%l\t%n %v" | sort -k1,1 | tail -200 | nl'
+
+function jctl
+    set lines (or $argv[1] 50)
+    journalctl -p 3 -xb -n $lines
+end
+
+function grubup
+    sudo update-grub
+end
+
+function fixpacman
+    if test -f /var/lib/pacman/db.lck
+        sudo rm /var/lib/pacman/db.lck
+        echo "Pacman lock removed."
+    else
+        echo "No pacman lock found."
+    end
+end
+
+function rip
+    set count (or $argv[1] 200)
+    expac --timefmt="%Y-%m-%d %T" "%l\t%n %v" | sort -k1,1 | tail -$count | nl
+end
 
 # ─────────────────────────────
 # 📦 PACKAGE MANAGEMENT
@@ -77,22 +94,7 @@ alias psmem10 'ps auxf | sort -nr -k 4 | head -10'
 alias big 'expac -H M "%m\t%n" | sort -h | nl'
 alias btop 'btop --force-utf'
 
-# ─────────────────────────────
-# 🐍 PYTHON DEV TOOLS
-# ─────────────────────────────
-alias venv 'python -m venv env'
-
-function acvt --description "Activate virtualenv (Fish)"
-    if test -f env/bin/activate.fish
-        source env/bin/activate.fish
-    else
-        echo "❌ env/bin/activate.fish not found!"
-    end
-end
-
-# ─────────────────────────────
-# 🧰 MISC UTILITIES
-# ─────────────────────────────
+# MISC UTILITIES
 alias wget 'wget -c'
 
 function tarnow --description "Create tar.gz archive from files"
