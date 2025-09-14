@@ -38,7 +38,7 @@ echo -e "${BLUE}================================================================
 # ========== VARIABLES ==========
 PACKAGES=(
     fish eza bat fastfetch expac yay paru ugrep btop hwinfo reflector
-    tar wget p7zip starship ttf-firacode-nerd neovim
+    tar wget p7zip starship ttf-firacode-nerd neovim uv
 )
 NVIM_CONFIG_REPO="https://github.com/NvChad/starter"
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
