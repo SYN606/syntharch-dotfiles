@@ -2,139 +2,137 @@
 # PYTHON DEV TOOLS (Fish + UV)
 # ─────────────────────────────
 
-# Check if uv is installed
-function _check_uv
-    if type -q uv
-        return 0
-    else
-        return 1
-    end
-end
-
 # Create a virtual environment (uv preferred, pip fallback)
 function mkvenv --description "Create Python virtualenv"
-    set env_name (or $argv[1] "env")
+    set env_name .venv
 
     if test -d $env_name
         echo "Virtual environment '$env_name' already exists."
         return 1
     end
 
-    if _check_uv
-        uv new $env_name
+    if type -q uv
+        uv venv
         echo "Virtual environment '$env_name' created using uv."
     else
         python -m venv $env_name
-        echo "uv not found. Virtual environment '$env_name' created using venv."
+        echo "uv not found. Virtual environment '$env_name' created using python -m venv."
     end
 end
 
 # Activate virtual environment
 function acvt --description "Activate virtualenv"
-    set env_name (or $argv[1] "env")
+    set env_name .venv
 
-    if _check_uv
-        if uv list | grep -q $env_name
-            uv activate $env_name
-            echo "Activated virtual environment '$env_name' via uv."
-        else
-            echo "Virtual environment '$env_name' not found in uv."
-        end
+    if test -f $env_name/bin/activate.fish
+        source $env_name/bin/activate.fish
+        echo "Activated virtual environment '$env_name'."
     else
-        if test -f $env_name/bin/activate.fish
-            source $env_name/bin/activate.fish
-            echo "Activated virtual environment '$env_name' via venv."
-        else
-            echo "Activation script not found for '$env_name'."
-        end
+        echo "Activation script not found for '$env_name'."
     end
 end
 
-# Initialize project (pyproject.toml) using uv or poetry fallback
+# Initialize project (pyproject.toml) using uv
 function initproj --description "Initialize Python project (pyproject.toml)"
-    set project_name (or $argv[1] (basename (pwd)))
+    if test (count $argv) -ge 1
+        set project_name $argv[1]
+    else
+        set project_name (basename (pwd))
+    end
 
-    if _check_uv
+    if type -q uv
         uv init $project_name
         echo "Project '$project_name' initialized using uv."
+
+        # Remove unwanted main.py
+        if test -f main.py
+            rm main.py
+            echo "Removed default main.py."
+        end
     else
-        poetry init --name $project_name --no-interaction
-        echo "uv not found. Project '$project_name' initialized using poetry."
+        echo "uv not found. No fallback available for init."
     end
 end
 
 # Install a package and update pyproject.toml
-function installpkg --description "Install package and update pyproject.toml"
-    set pkg $argv[1]
-    if not set -q pkg
+function installpkg --description "Install package"
+    if test (count $argv) -eq 0
         echo "Please provide a package name."
         return 1
     end
 
-    if _check_uv
-        uv install $pkg
-        echo "Package '$pkg' installed using uv and pyproject.toml updated."
+    set pkg $argv[1]
+    if type -q uv
+        uv add $pkg
+        echo "Package '$pkg' installed with uv."
     else
         pip install $pkg
-        echo "uv not found. Package '$pkg' installed using pip."
+        echo "uv not found. Package '$pkg' installed with pip."
     end
 end
 
-# Remove a package and update pyproject.toml
-function removepkg --description "Remove package and update pyproject.toml"
-    set pkg $argv[1]
-    if not set -q pkg
+# Remove a package
+function removepkg --description "Remove package"
+    if test (count $argv) -eq 0
         echo "Please provide a package name."
         return 1
     end
 
-    if _check_uv
+    set pkg $argv[1]
+    if type -q uv
         uv remove $pkg
-        echo "Package '$pkg' removed using uv and pyproject.toml updated."
+        echo "Package '$pkg' removed with uv."
     else
         pip uninstall -y $pkg
-        echo "uv not found. Package '$pkg' removed using pip."
+        echo "uv not found. Package '$pkg' removed with pip."
     end
 end
 
 # Export requirements.txt
 function exportreq --description "Export requirements.txt"
-    set file (or $argv[1] "requirements.txt")
-
-    if _check_uv
-        uv current | grep -q "env"
-        if test $status -eq 0
-            pip freeze > $file
-            echo "Requirements exported to '$file'."
-        else
-            echo "Activate a uv environment first."
-        end
+    if test (count $argv) -ge 1
+        set file $argv[1]
     else
-        if test -f env/bin/activate.fish
-            source env/bin/activate.fish
+        set file requirements.txt
+    end
+
+    if set -q VIRTUAL_ENV
+        if type -q uv
+            uv pip freeze > $file
+            echo "Requirements exported to '$file' using uv."
+        else
             pip freeze > $file
             echo "Requirements exported to '$file' using pip."
-        else
-            echo "Activate a virtual environment first."
         end
+    else if test -f .venv/bin/activate.fish
+        source .venv/bin/activate.fish
+        pip freeze > $file
+        echo "Requirements exported to '$file' using pip after activating .venv."
+    else
+        echo "No active virtual environment. Please activate one first."
     end
 end
 
 # Remove virtual environment
 function rmvenv --description "Remove virtualenv"
-    set env_name (or $argv[1] "env")
+    if test (count $argv) -ge 1
+        set env_name $argv[1]
+    else
+        set env_name .venv
+    end
 
-    if _check_uv
-        if uv list | grep -q $env_name
-            uv remove $env_name
-            echo "Virtual environment '$env_name' removed using uv."
+    if type -q uv
+        # uv doesn’t directly remove venvs by name, so fallback to rm -rf
+        if test -d $env_name
+            rm -rf $env_name
+            echo "Virtual environment '$env_name' removed."
         else
-            echo "Virtual environment '$env_name' not found in uv."
+            echo "Virtual environment '$env_name' does not exist."
         end
     else
         if test -d $env_name
             rm -rf $env_name
-            echo "Virtual environment '$env_name' removed using venv."
+            echo "Virtual environment '$env_name' removed."
         else
             echo "Virtual environment '$env_name' does not exist."
         end
