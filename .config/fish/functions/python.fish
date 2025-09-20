@@ -41,7 +41,7 @@ function initproj --description "Initialize Python project (pyproject.toml)"
     end
 
     if type -q uv
-        uv init $project_name
+        uv init .
         echo "Project '$project_name' initialized using uv."
 
         # Remove unwanted main.py
