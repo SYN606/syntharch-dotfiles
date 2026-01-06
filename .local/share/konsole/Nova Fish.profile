@@ -1,6 +1,6 @@
 [Appearance]
-ColorScheme=Sweet-Mars
-Font=FiraCode Nerd Font,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+ColorScheme=Sweet
+Font=FiraCode Nerd Font,14,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 TabColor=255,255,128
 
 [Cursor Options]
@@ -9,8 +9,11 @@ CustomCursorColor=255,0,0
 UseCustomCursorColor=true
 
 [General]
+AlternatingBackground=0
+AlternatingBars=0
 Command=/bin/fish
-Name=Nova Fish
+ErrorBars=0
+Name=betterKonsole
 Parent=FALLBACK/
 
 [Interaction Options]
