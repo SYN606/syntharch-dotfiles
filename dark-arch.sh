@@ -1,99 +1,124 @@
 #!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
 
-
-GREEN="\e[38;2;119;221;119m"   
-RED="\e[38;2;255;105;97m"      
-YELLOW="\e[38;2;253;253;150m"  
-CYAN="\e[38;2;176;224;230m"    
+# ─── Colors ────────────────────────────────────────
+GREEN="\e[38;2;119;221;119m"
+RED="\e[38;2;255;105;97m"
+YELLOW="\e[38;2;253;253;150m"
+CYAN="\e[38;2;176;224;230m"
 NC="\e[0m"
 
+info()    { echo -e "${CYAN}[INFO]${NC} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+error()   { echo -e "${RED}[ERROR]${NC} $1"; }
+warn()    { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 
+trap 'error "Script failed at line $LINENO"' ERR
 
-function info()    { echo -e "${CYAN}[INFO]${NC} $1"; }
-function success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-function error()   { echo -e "${RED}[ERROR]${NC} $1"; }
-function warn()    { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-
-
-# ─── Intro ────────────────────────────────────────
+# ─── Intro ─────────────────────────────────────────
 echo -e "${GREEN}"
 echo "╔══════════════════════════════════════════════╗"
 echo "║         DARK ARCH - Pentesting Toolkit       ║"
-echo "║     Custom Fish Shell Dotfiles Installer      ║"
+echo "║        BlackArch Bootstrap & Installer       ║"
 echo "║                                              ║"
-echo "║           Developed by: syn 606               ║"
+echo "║           Developed by: syn 606              ║"
 echo "╚══════════════════════════════════════════════╝"
 echo -e "${NC}"
 
+echo -e "${YELLOW}This script installs the official BlackArch repository and a curated set of penetration testing tools.${NC}"
 
-echo -e "${YELLOW}This script installs the BlackArch repository and essential penetration testing tools for Fish shell users.${NC}"
+# ─── Pre-flight Checks ─────────────────────────────
+info "Checking internet connectivity..."
+ping -q -c 1 blackarch.org &>/dev/null || {
+    error "No internet connection detected."
+    exit 1
+}
 
+if [[ "$EUID" -eq 0 ]]; then
+    warn "Running as root. Script is designed to use sudo."
+fi
 
-# ─── Step 1: Check BlackArch ─────────────────────
-info "Verifying if BlackArch repository is enabled..."
+# ─── Enable multilib (official requirement) ───────
+info "Checking multilib repository..."
+if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+    warn "Multilib is disabled. Enabling it (required by BlackArch)..."
+    sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
+    sudo pacman -Sy
+else
+    success "Multilib already enabled."
+fi
 
-
-if ! pacman -Sgq blackarch >/dev/null 2>&1; then
-    warn "BlackArch repository not found. Downloading strap.sh script..."
+# ─── Check BlackArch Repo ──────────────────────────
+info "Verifying BlackArch repository..."
+if ! pacman -Sgq blackarch &>/dev/null; then
+    warn "BlackArch repository not found. Installing via strap.sh..."
     
-    curl -O https://blackarch.org/strap.sh
+    TMP_DIR="$(mktemp -d)"
+    pushd "$TMP_DIR" >/dev/null
     
-    echo "bbf0a0b838aed0ec05fff2d375dd17591cbdf8aa  strap.sh" | sha1sum -c - || {
-        error "SHA1 checksum verification failed. Aborting installation."
-        exit 1
-    }
+    curl -fsSLO https://blackarch.org/strap.sh
+    
+    info "Verifying strap.sh SHA1 checksum..."
+    echo "00688950aaf5e5804d2abebb8d3d3ea1d28525ed  strap.sh" | sha1sum -c -
     
     chmod +x strap.sh
     sudo ./strap.sh
     
-    success "BlackArch repository successfully added."
+    popd >/dev/null
+    rm -rf "$TMP_DIR"
+    
+    success "BlackArch repository successfully installed."
 else
-    success "BlackArch repository is already present."
+    success "BlackArch repository already present."
 fi
 
+# ─── Mandatory System Upgrade (Official) ───────────
+info "Performing full system upgrade (required by BlackArch)..."
+sudo pacman -Syu --noconfirm
 
-# ─── Step 2: Define Package List ─────────────────────
+# ─── Package List ──────────────────────────────────
 PACKAGES=(
-    # Core Tools
+    # Core
     bettercap bettercap-caplets nmap metasploit wireshark-cli
     
-    # Wireless Attacks
+    # Wireless
     wifite reaver bully cowpatty pyrit macchanger hcxdumptool hcxtools
     
-    # Cracking & Brute Forcing
+    # Cracking
     hashcat john hydra medusa
     
     # Recon / OSINT
-    theharvester recon-ng subfinder amas masscan
+    theharvester recon-ng subfinder amass masscan
     
-    # Web Application Testing
+    # Web
     sqlmap ffuf gobuster wfuzz nikto xsstrike
     
-    # Phishing / Social Engineering
-    blackarch/gophish blackarch/gophish-debug
+    # Phishing / SE
+    gophish gophish-debug
     
-    # Exploits / Databases
+    # Exploits
     exploitdb
     
-    # DNS / Subdomain Enumeration
+    # DNS
     dnsrecon dnsenum sublist3r
     
-    # Utility / Networking
-    netcat socat
+    # Utilities
+    openbsd-netcat socat
     
-    # Optional Post-Exploitation Tools
+    # Post-exploitation
     empire sliver veil
 )
 
-
-# ─── Step 3: Install Tools ───────────────────────
-info "Starting installation of DARK ARCH pentesting tools..."
+# ─── Install Tools ─────────────────────────────────
+info "Installing DARK ARCH pentesting tools..."
 if sudo pacman -S --noconfirm --needed "${PACKAGES[@]}"; then
-    success "All specified tools have been installed successfully."
+    success "All specified tools installed successfully."
 else
-    error "Installation completed with some errors. Please check the output for details."
+    warn "Some tools failed to install. Review pacman output."
 fi
 
-
-# ─── Completion ─────────────────────────────────────
-echo -e "${GREEN}[SUCCESS]${NC} ${CYAN}DARK ARCH setup is complete. Please verify tool functionality as needed.${NC}"
+# ─── Completion ────────────────────────────────────
+echo
+success "DARK ARCH setup complete."
+echo -e "${CYAN}Verify tools individually and reboot if kernel or core libs were updated.${NC}"
