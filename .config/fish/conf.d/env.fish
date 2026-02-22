@@ -1,12 +1,16 @@
 # Disable virtualenv prompt pollution
 set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 
-# Set default shell
-set -gx SHELL /usr/bin/fish
+# Ensure SHELL reflects actual fish path (without hardcoding)
+if type -q fish
+    set -gx SHELL (command -v fish)
+end
 
-# Use bat for manpages when available
+# Use bat/batcat for manpages when available
 if type -q bat
     set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
+else if type -q batcat
+    set -gx MANPAGER "sh -c 'col -bx | batcat -l man -p'"
 else
     set -gx MANPAGER less
 end

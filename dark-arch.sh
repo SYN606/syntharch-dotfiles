@@ -19,18 +19,18 @@ trap 'error "Script failed at line $LINENO"' ERR
 # ─── Intro ─────────────────────────────────────────
 echo -e "${GREEN}"
 echo "╔══════════════════════════════════════════════╗"
-echo "║         DARK ARCH - Pentesting Toolkit       ║"
-echo "║        BlackArch Bootstrap & Installer       ║"
+echo "║         DARK UBUNTU - Pentesting Toolkit    ║"
+echo "║        Curated Security Environment         ║"
 echo "║                                              ║"
 echo "║           Developed by: syn 606              ║"
 echo "╚══════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-echo -e "${YELLOW}This script installs the official BlackArch repository and a curated set of penetration testing tools.${NC}"
+echo -e "${YELLOW}This script installs a curated set of penetration testing tools for Ubuntu/Debian systems.${NC}"
 
 # ─── Pre-flight Checks ─────────────────────────────
 info "Checking internet connectivity..."
-ping -q -c 1 blackarch.org &>/dev/null || {
+ping -q -c 1 google.com &>/dev/null || {
     error "No internet connection detected."
     exit 1
 }
@@ -39,86 +39,77 @@ if [[ "$EUID" -eq 0 ]]; then
     warn "Running as root. Script is designed to use sudo."
 fi
 
-# ─── Enable multilib (official requirement) ───────
-info "Checking multilib repository..."
-if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
-    warn "Multilib is disabled. Enabling it (required by BlackArch)..."
-    sudo sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf
-    sudo pacman -Sy
-else
-    success "Multilib already enabled."
-fi
+# ─── Update System ────────────────────────────────
+info "Updating system..."
+sudo apt update
+sudo apt upgrade -y
 
-# ─── Check BlackArch Repo ──────────────────────────
-info "Verifying BlackArch repository..."
-if ! pacman -Sgq blackarch &>/dev/null; then
-    warn "BlackArch repository not found. Installing via strap.sh..."
-    
-    TMP_DIR="$(mktemp -d)"
-    pushd "$TMP_DIR" >/dev/null
-    
-    curl -fsSLO https://blackarch.org/strap.sh
-    
-    info "Verifying strap.sh SHA1 checksum..."
-    echo "00688950aaf5e5804d2abebb8d3d3ea1d28525ed  strap.sh" | sha1sum -c -
-    
-    chmod +x strap.sh
-    sudo ./strap.sh
-    
-    popd >/dev/null
-    rm -rf "$TMP_DIR"
-    
-    success "BlackArch repository successfully installed."
-else
-    success "BlackArch repository already present."
-fi
+# ─── Base Dependencies ─────────────────────────────
+info "Installing base dependencies..."
+sudo apt install -y \
+    curl wget git build-essential \
+    software-properties-common \
+    ca-certificates gnupg lsb-release \
+    python3 python3-pip python3-venv pipx
 
-# ─── Mandatory System Upgrade (Official) ───────────
-info "Performing full system upgrade (required by BlackArch)..."
-sudo pacman -Syu --noconfirm
+# Enable pipx globally
+pipx ensurepath
 
-# ─── Package List ──────────────────────────────────
-PACKAGES=(
-    # Core
-    bettercap bettercap-caplets nmap metasploit wireshark-cli
-    
-    # Wireless
-    wifite reaver bully cowpatty pyrit macchanger hcxdumptool hcxtools
-    
-    # Cracking
-    hashcat john hydra medusa
-    
-    # Recon / OSINT
-    theharvester recon-ng subfinder amass masscan
-    
-    # Web
-    sqlmap ffuf gobuster wfuzz nikto xsstrike
-    
-    # Phishing / SE
-    gophish gophish-debug
-    
-    # Exploits
+# ─── Core Security Tools (APT) ─────────────────────
+APT_PACKAGES=(
+    nmap
+    metasploit-framework
+    wireshark
+    aircrack-ng
+    reaver
+    bully
+    hashcat
+    john
+    hydra
+    medusa
+    theharvester
+    recon-ng
+    amass
+    masscan
+    sqlmap
+    gobuster
+    wfuzz
+    nikto
+    dnsrecon
+    dnsenum
+    netcat-openbsd
+    socat
     exploitdb
-    
-    # DNS
-    dnsrecon dnsenum sublist3r
-    
-    # Utilities
-    openbsd-netcat socat
-    
-    # Post-exploitation
-    empire sliver veil
 )
 
-# ─── Install Tools ─────────────────────────────────
-info "Installing DARK ARCH pentesting tools..."
-if sudo pacman -S --noconfirm --needed "${PACKAGES[@]}"; then
-    success "All specified tools installed successfully."
-else
-    warn "Some tools failed to install. Review pacman output."
-fi
+info "Installing core pentesting tools..."
+sudo apt install -y "${APT_PACKAGES[@]}"
+
+# ─── Tools via pipx (cleaner isolation) ───────────
+info "Installing Python-based tools..."
+pipx install subfinder || true
+pipx install xsstrike || true
+pipx install sublist3r || true
+pipx install ffuf || true
+
+# ─── Optional: Sliver C2 ───────────────────────────
+info "Installing Sliver C2..."
+curl -fsSL https://sliver.sh/install | sudo bash || warn "Sliver install failed."
+
+# ─── Wireshark Permissions Fix ─────────────────────
+info "Configuring Wireshark permissions..."
+sudo usermod -aG wireshark "$USER"
+
+# ─── Enable Services ───────────────────────────────
+info "Enabling PostgreSQL for Metasploit..."
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+
+# ─── Cleanup ───────────────────────────────────────
+info "Cleaning unused packages..."
+sudo apt autoremove -y
 
 # ─── Completion ────────────────────────────────────
 echo
-success "DARK ARCH setup complete."
-echo -e "${CYAN}Verify tools individually and reboot if kernel or core libs were updated.${NC}"
+success "DARK UBUNTU setup complete."
+echo -e "${CYAN}Log out and back in to apply group changes (wireshark). Reboot recommended if kernel updated.${NC}"

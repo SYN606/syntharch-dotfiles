@@ -1,6 +1,9 @@
-# System diagnostics helpers
+# System diagnostics helpers (Ubuntu/Debian)
+
+# Show recent journalctl errors
 function jctl --description "Show recent journalctl errors"
-    set -l lines (or $argv[1] 50)
+    set -l lines 50
+    test (count $argv) -ge 1; and set lines $argv[1]
     journalctl -p 3 -xb -n $lines
 end
 
@@ -9,48 +12,50 @@ function grubup --description "Update GRUB config"
     sudo update-grub
 end
 
-# Remove pacman database lock safely
-function fixpacman --description "Remove pacman db lock"
-    if test -f /var/lib/pacman/db.lck
-        sudo rm /var/lib/pacman/db.lck
-        echo "Pacman lock removed."
+# Fix dpkg lock issues safely
+function fixapt --description "Fix APT/dpkg lock"
+    if pgrep -x apt >/dev/null; or pgrep -x dpkg >/dev/null
+        echo "APT or dpkg is currently running. Wait before fixing."
+        return 1
+    end
+
+    if test -f /var/lib/dpkg/lock-frontend
+        sudo rm /var/lib/dpkg/lock-frontend
+        sudo rm -f /var/lib/dpkg/lock
+        sudo dpkg --configure -a
+        echo "APT lock cleared and dpkg configured."
     else
-        echo "No pacman lock found."
+        echo "No APT lock found."
     end
 end
 
 # List recently installed packages
 function rip --description "Recently installed packages"
-    set -l count (or $argv[1] 200)
-    expac --timefmt="%Y-%m-%d %T" "%l\t%n %v" \
-        | sort -k1,1 | tail -n $count | nl
+    set -l count 200
+    test (count $argv) -ge 1; and set count $argv[1]
+
+    grep " install " /var/log/dpkg.log \
+        | tail -n $count \
+        | awk '{print $1, $2, $4}' \
+        | nl
 end
 
-# Clear pacman cache interactively
-function cls-cache --description "Clear pacman cache"
+# Clean APT cache interactively
+function cls-cache --description "Clear APT cache"
     read -l -P "Clear all cached packages? (y/N) " confirm
     test "$confirm" = y; or return
-    yes | sudo pacman -Scc
+    sudo apt clean
+    echo "APT cache cleared."
 end
 
-# Remove orphaned packages
+# Remove orphaned packages (unused dependencies)
 function orphans --description "Remove orphaned packages"
-    set -l ops (pacman -Qdtq)
-    if test -n "$ops"
-        echo "Removing orphan packages:"
-        echo $ops
-        sudo pacman -Rns $ops
-        sudo pacman -Sc
-    else
-        echo "No orphaned packages found."
-    end
+    sudo apt autoremove
 end
 
-# Update pacman mirrorlist using reflector
-function mirrors --description "Update pacman mirrorlist"
-    sudo reflector --verbose --country India \
-        --sort rate -l 20 \
-        --save /etc/pacman.d/mirrorlist
+# Update package lists
+function mirrors --description "Update APT package lists"
+    sudo apt update
 end
 
 # Create compressed tar archive
@@ -59,7 +64,7 @@ function tarnow --description "Create tar.gz archive"
         echo "Usage: tarnow <archive.tar.gz> <files...>"
         return 1
     end
-    tar -acf $argv
+    tar -czvf $argv
 end
 
 # Extract compressed tar archive

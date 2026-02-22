@@ -10,26 +10,27 @@ alias ll='eza -l --group-directories-first --icons'
 alias l.='eza -ald --group-directories-first --icons .*'
 
 # File Viewing
-alias cat='bat --style=header,snip,changes'
+alias cat='batcat --style=header,snip,changes'
+alias bat='batcat'
 
 # Utilities
 alias grep='ugrep --color=always'
 alias hw='hwinfo --short'
 
-# Package Management (safe)
-alias update='sudo pacman -Syu'
-alias getpkg='sudo pacman -S --needed'
-alias rmpkg='sudo pacman -Rns'
-alias search='yay -Ss'
-alias aurget='yay -S'
+# Package Management (APT)
+alias update='sudo apt update && sudo apt upgrade -y'
+alias getpkg='sudo apt install'
+alias rmpkg='sudo apt remove --purge'
+alias autoremove='sudo apt autoremove -y'
+alias search='apt search'
 
 # Monitoring
 alias psmem='ps auxf | sort -nr -k 4'
 alias psmem10='ps auxf | sort -nr -k 4 | head -10'
-alias big='expac -H M "%m\t%n" | sort -h | nl'
+alias big='dpkg-query -Wf="${Installed-Size}\t${Package}\n" | sort -n | awk "{ printf \"%.1fM\t%s\n\", \$1/1024, \$2 }" | nl'
 alias btop='btop --force-utf'
 
 # Misc
 alias wget='wget -c'
 alias cls='clear'
-alias cls-hist='builtin history clear'
+alias cls-hist='history -c'
