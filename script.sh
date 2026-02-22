@@ -37,11 +37,12 @@ echo -e "${BLUE}================================================================
 echo -e "${YELLOW}Ubuntu/Debian Dotfile Setup${RESET} | ${GREEN}by SYN606"
 echo -e "${YELLOW}GitHub Repository${RESET}        | ${CYAN}https://github.com/syn606"
 echo -e "${BLUE}======================================================================${RESET}"
+
 # ========== VARIABLES ==========
 APT_PACKAGES=(
     fish
     eza
-    batcat
+    bat
     fastfetch
     ugrep
     btop
@@ -50,7 +51,6 @@ APT_PACKAGES=(
     wget
     p7zip-full
     unzip
-    starship
     neovim
     git
     curl
@@ -77,15 +77,32 @@ check_internet() {
     }
 }
 
+enable_universe_repo() {
+    echo -e "${BLUE}Ensuring universe repository is enabled...${RESET}"
+    sudo add-apt-repository -y universe || true
+}
+
 system_update() {
     echo -e "${BLUE}Updating system...${RESET}"
-    sudo apt update
-    sudo apt upgrade -y
+    sudo apt-get update
+    sudo apt-get upgrade -y
 }
 
 install_packages() {
     echo -e "${BLUE}Installing required packages...${RESET}"
-    sudo apt install -y "${APT_PACKAGES[@]}"
+    sudo apt-get install -y "${APT_PACKAGES[@]}"
+}
+
+install_starship() {
+    if command -v starship &>/dev/null; then
+        echo -e "${GREEN}starship already installed.${RESET}"
+        return
+    fi
+
+    echo -e "${BLUE}Installing starship...${RESET}"
+    curl -sS https://starship.rs/install.sh -o /tmp/starship-install.sh
+    sh /tmp/starship-install.sh -y
+    rm /tmp/starship-install.sh
 }
 
 install_uv() {
@@ -103,8 +120,6 @@ install_uv() {
         echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.profile"
         echo -e "${YELLOW}Added ~/.local/bin to PATH. Restart shell required.${RESET}"
     fi
-
-    echo -e "${GREEN}uv installed successfully.${RESET}"
 }
 
 install_nvim_config() {
@@ -128,7 +143,7 @@ handle_local_directory() {
     rsync -av "$SCRIPT_DIR/.local/" "$HOME/.local/"
 }
 
-setup_starship() {
+setup_starship_prompt() {
     mkdir -p "$(dirname "$FISH_CONFIG")"
     grep -q "starship init fish" "$FISH_CONFIG" 2>/dev/null || \
     echo 'starship init fish | source' >> "$FISH_CONFIG"
@@ -151,13 +166,15 @@ install_pentest_tools() {
 main() {
     check_root_notice
     check_internet
+    enable_universe_repo
     system_update
     install_packages
+    install_starship
     install_uv
     install_nvim_config
     sync_configs
     handle_local_directory
-    setup_starship
+    setup_starship_prompt
     install_pentest_tools
 
     echo -e "\n${GREEN}Ubuntu setup complete.${RESET}"
