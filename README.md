@@ -1,6 +1,6 @@
 # SYNTHARCH - dotfiles
 
-![GitHub last commit](https://img.shields.io/github/last-commit/SYN606/dotfiles?style=for-the-badge)
+![GitHub last commit](https://img.shields.io/github/last-commit/SYN606/dotfiles/ubuntu?style=for-the-badge)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-LTS-orange?style=for-the-badge&logo=ubuntu&logoColor=white)
 ![Fish Shell](https://img.shields.io/badge/shell-fish-blue?style=for-the-badge&logo=fish)
 ![ShellCheck](https://img.shields.io/badge/lint-shellcheck-brightgreen?style=for-the-badge&logo=gnu-bash)
