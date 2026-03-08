@@ -1,22 +1,25 @@
 # Dotfiles management helpers for syntharch-dotfiles
 
+set -g DOTFILES_REPO "$HOME/syntharch-dotfiles"
+set -g DOTFILES_BRANCH "ubuntu"
+
 # Internal helper to locate dotfiles repo
 function __dotfiles_repo
-    set -l repo "$HOME/syntharch-dotfiles"
-    test -d $repo; or begin
-        echo "Dotfiles repo not found at $repo"
+    test -d $DOTFILES_REPO; or begin
+        echo "Dotfiles repo not found at $DOTFILES_REPO"
         return 1
     end
-    echo $repo
+    echo $DOTFILES_REPO
 end
 
 # Internal helper to ensure git repo
 function __dotfiles_require_git
-    test -d .git; or begin
+    git rev-parse --is-inside-work-tree >/dev/null 2>&1; or begin
         echo "Not a git repository."
         return 1
     end
 end
+
 
 # Update dotfiles from remote
 function update_dotfiles --description "Update local dotfiles"
@@ -38,6 +41,7 @@ function update_dotfiles --description "Update local dotfiles"
         end
     end
 
+    # Handle local changes
     if not git diff --quiet; or not git diff --cached --quiet
         read -l -P "Uncommitted changes found. Stash them? (Y/n): " stash
         if not test (string lower $stash) = n
@@ -50,18 +54,18 @@ function update_dotfiles --description "Update local dotfiles"
         return 1
     end
 
-    set -l branch main
-    git show-ref --verify --quiet refs/remotes/origin/main; or set branch master
-
-    git switch $branch >/dev/null 2>&1; or begin
-        cd $cwd
-        return 1
-    end
-    git pull origin $branch; or begin
+    git switch $DOTFILES_BRANCH >/dev/null 2>&1; or begin
+        echo "Failed to switch to branch '$DOTFILES_BRANCH'"
         cd $cwd
         return 1
     end
 
+    git pull origin $DOTFILES_BRANCH; or begin
+        cd $cwd
+        return 1
+    end
+
+    # Run setup script if available
     if test -x setup.sh
         read -l -P "Run setup.sh now? (Y/n): " run
         test (string lower $run) = n; or ./setup.sh
@@ -69,6 +73,7 @@ function update_dotfiles --description "Update local dotfiles"
 
     cd $cwd
 end
+
 
 # Show dotfiles repository status
 function dotfiles_status --description "Show dotfiles repo status"
@@ -85,12 +90,16 @@ function dotfiles_status --description "Show dotfiles repo status"
     echo "Branch: "(git branch --show-current)
     echo "Remote: "(git remote get-url origin)
 
-    git fetch --dry-run >/dev/null 2>&1
+    git fetch --quiet
 
     set -l local (git rev-parse HEAD)
-    set -l remote (git rev-parse '@{u}' 2>/dev/null)
+    set -l remote (git rev-parse origin/$DOTFILES_BRANCH 2>/dev/null)
 
-    test "$local" = "$remote"; and echo "Status: up to date"; or echo "Status: updates available"
+    if test "$local" = "$remote"
+        echo "Status: up to date"
+    else
+        echo "Status: updates available"
+    end
 
     if git diff --quiet; and git diff --cached --quiet
         echo "Working tree: clean"
@@ -99,10 +108,12 @@ function dotfiles_status --description "Show dotfiles repo status"
         git status --porcelain
     end
 
-    echo "Stashes: "(git stash list | wc -l)
+    set -l stash_count (git stash list | wc -l)
+    echo "Stashes: $stash_count"
 
     cd $cwd
 end
+
 
 # Reset dotfiles repository to clean state
 function dotfiles_reset --description "Reset dotfiles repository"
@@ -118,10 +129,11 @@ function dotfiles_reset --description "Reset dotfiles repository"
         return 1
     end
 
-    git reset --hard HEAD; and git clean -fd
+    git reset --hard HEAD
+    git clean -fd
 
     read -l -P "Pull latest changes? (Y/n): " pull
-    test (string lower $pull) = n; or git pull
+    test (string lower $pull) = n; or git pull origin $DOTFILES_BRANCH
 
     cd $cwd
 end
